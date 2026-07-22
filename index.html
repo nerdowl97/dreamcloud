@@ -833,6 +833,88 @@
       z-index: 2000;
     }
 
+/* ==========================================================================
+   DREAMY FOOTER STYLES
+   ========================================================================== */
+
+/* زيادة مساحة سفلية للمحتوى الرئيسي عشان ما ينزنقش */
+.main-content {
+  margin-bottom: 60px !important;
+  padding-bottom: 20px;
+}
+
+/* الفوتر الزجاجي الناعم */
+.app-footer {
+  margin-top: 80px;
+  padding: 40px 20px 30px 20px;
+  background: var(--card-bg);
+  border-top: 1px solid var(--card-border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  text-align: center;
+  position: relative;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.05);
+  transition: var(--transition-smooth);
+}
+
+.footer-cloud-divider {
+  font-size: 1.5rem;
+  letter-spacing: 8px;
+  margin-bottom: 20px;
+  opacity: 0.8;
+  animation: floatSlow 4s ease-in-out infinite alternate;
+}
+
+.footer-content {
+  max-width: 800px;
+  margin: 0 auto 25px auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer-brand h3 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.footer-brand p {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  max-width: 500px;
+}
+
+.footer-quote p {
+  font-size: 0.9rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  opacity: 0.85;
+}
+
+.footer-bottom {
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  opacity: 0.75;
+}
+
+/* تجاوب مع الشاشات الصغيرة */
+@media (max-width: 600px) {
+  .app-footer {
+    padding: 30px 15px 25px 15px;
+    margin-top: 50px;
+  }
+  
+  .footer-cloud-divider {
+    font-size: 1.2rem;
+    letter-spacing: 4px;
+  }
+}
+
     @keyframes sparkleFloat {
       0% { opacity: 1; transform: translate(0, 0) scale(1); }
       100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(1.8); }
@@ -1637,5 +1719,21 @@
       setTimeout(playAmbientLoop, Math.random() * 3000 + 2000);
     }
   </script>
+<!-- Cozy Dreamy Footer -->
+  <footer class="app-footer">
+    <div class="footer-cloud-divider">☁️ ✨ 🌙 ✨ ☁️</div>
+    <div class="footer-content">
+      <div class="footer-brand">
+        <h3>Dream Cloud ☁️</h3>
+        <p>A quiet place among the clouds for your dreams, wishes, and future adventures.</p>
+      </div>
+      <div class="footer-quote">
+        <p>“Never stop dreaming, for dreams are the stardust from which adventures are born.” ✨</p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>Crafted with love, stardust & magic • Dream Cloud &copy; 2026</p>
+    </div>
+  </footer>
 </body>
 </html>
