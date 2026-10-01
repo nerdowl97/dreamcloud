@@ -1248,9 +1248,55 @@
     });
 
     // Save Data
+    // Wrapped in try/catch: once the browser's localStorage quota is full
+    // (easy to hit once a bunch of uploaded photos are stored as base64),
+    // setItem() throws. Previously that error was never caught, so the
+    // rest of handleFormSubmit() (closing the modal, re-rendering) never
+    // ran and the app looked "frozen" after ~19 dreams. Now we catch it,
+    // warn the user, and let the caller decide what to do.
     function saveData() {
-      localStorage.setItem('dc_dreams', JSON.stringify(dreams));
-      localStorage.setItem('dc_wishes', JSON.stringify(wishes));
+      try {
+        localStorage.setItem('dc_dreams', JSON.stringify(dreams));
+        localStorage.setItem('dc_wishes', JSON.stringify(wishes));
+        return true;
+      } catch (err) {
+        console.error('Dream Cloud: could not save (storage likely full)', err);
+        alert('مساحة التخزين في المتصفح امتلأت ☁️\nجرّب تحذف صور/أحلام قديمة، أو استخدم رابط صورة (URL) بدل رفع صورة من جهازك، وبعدين جرّب تاني.');
+        return false;
+      }
+    }
+
+    // Shrinks an uploaded photo before it's stored as base64, so a single
+    // dream doesn't eat megabytes of the (very limited, ~5-10MB) localStorage
+    // quota. Resizes to a max dimension and re-encodes as a compressed JPEG.
+    function compressImage(file, maxDim = 900, quality = 0.72) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = () => reject(reader.error);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.onerror = () => reject(new Error('Could not read image'));
+          img.onload = () => {
+            let { width, height } = img;
+            if (width > maxDim || height > maxDim) {
+              if (width >= height) {
+                height = Math.round(height * (maxDim / width));
+                width = maxDim;
+              } else {
+                width = Math.round(width * (maxDim / height));
+                height = maxDim;
+              }
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', quality));
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
     }
 
     // Time-based Atmosphere System
@@ -1435,11 +1481,15 @@
       let imageUrl = document.getElementById('dream-image-url').value.trim();
 
       if (fileInput.files && fileInput.files[0]) {
-        imageUrl = await new Promise(resolve => {
-          const reader = new FileReader();
-          reader.onload = e => resolve(e.target.result);
-          reader.readAsDataURL(fileInput.files[0]);
-        });
+        try {
+          // Compressed instead of stored raw — a phone photo can be several
+          // MB as base64, which is what was silently filling up the quota.
+          imageUrl = await compressImage(fileInput.files[0]);
+        } catch (err) {
+          console.error('Dream Cloud: image processing failed', err);
+          alert('حصلت مشكلة في معالجة الصورة ☁️ جرّب صورة تانية أو استخدم رابط صورة.');
+          return;
+        }
       }
 
       if (!imageUrl) {
@@ -1459,13 +1509,24 @@
         dateAdded: id ? (dreams.find(d => d.id === id)?.dateAdded || new Date().toISOString()) : new Date().toISOString()
       };
 
+      // Snapshot so we can roll back cleanly if the save below fails —
+      // this is what stops the app from getting stuck: before, a failed
+      // save left a half-added dream sitting in memory with no feedback
+      // and the modal never closed.
+      const previousDreams = dreams.slice();
+
       if (id) {
         dreams = dreams.map(d => d.id === id ? { ...d, ...dreamData } : d);
       } else {
         dreams.unshift(dreamData);
       }
 
-      saveData();
+      const saved = saveData();
+      if (!saved) {
+        dreams = previousDreams; // revert, keep the form open so nothing typed is lost
+        return;
+      }
+
       addModal.classList.add('hidden');
       renderApp();
       triggerSparkleBurst(window.innerWidth / 2, window.innerHeight / 2);
